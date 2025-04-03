@@ -44,6 +44,9 @@ class FuzzerConfig(BaseModel):
 @router.post("/fuzzer")
 async def set_up_fuzzer(config: FuzzerConfig, background_tasks: BackgroundTasks):
     global fuzzer_data, fuzzer_links
+    fuzzer_links = None
+    fuzzer_data = None
+    operation_done = False
     try:
         def run_fuzzer():
             global fuzzer_data, fuzzer_links, fuzzer, operation_done
