@@ -3,7 +3,7 @@ from typing import Dict, Any
 import json
 import string
 
-from backend.utils import send_get_request, send_post_request, send_put_request
+from services.utils import send_get_request, send_post_request, send_put_request
 
 class Fuzzer:
     config = dict()

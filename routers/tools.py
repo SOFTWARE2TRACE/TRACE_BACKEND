@@ -1,12 +1,12 @@
-from fastapi import APIRouter, HTTPException, Query, Body
 from typing import Any
+
 import requests
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel
 
-from .Crawler import crawl_site  # Ensure this is an async function
-from routers.treestructuremanager import TreeStructureManager
-from .state import tree_data, init_tree_manager
-import asyncio
+from Crawler import crawl_site  # Ensure this is an async function
+from state import init_tree_manager
+
 router = APIRouter()
 
 @router.post("/run-crawler")

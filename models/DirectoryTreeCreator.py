@@ -1,5 +1,5 @@
-from backend.Tree import Tree
-from backend.utils import getURL, getIP  # helper functions that did not really belong in this class
+from models.Tree import Tree
+from services.utils import getURL, getIP  # helper functions that did not really belong in this class
 
 """
 # Crawler data will have this format:

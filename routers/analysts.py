@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import List, Dict
-from models import Analyst, Project, Task
+from models.models import Analyst, Project, Task
 
 router = APIRouter()
 

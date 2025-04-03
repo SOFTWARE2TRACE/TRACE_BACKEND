@@ -7,8 +7,8 @@ from typing import Dict, Any, Optional
 
 from starlette.responses import JSONResponse
 
-from backend.Crawler import Crawler
-from backend.Fuzzer import Fuzzer
+from services.Crawler import Crawler
+from services.Fuzzer import Fuzzer
 from services.mdp3 import WebScraper, nlp_subroutine, CredentialGeneratorMDP
 
 app = FastAPI()

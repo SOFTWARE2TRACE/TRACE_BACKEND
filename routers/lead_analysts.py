@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException
-from models import Analyst, Project, Task
+from models.models import Analyst, Project, Task
 
 router = APIRouter()
 

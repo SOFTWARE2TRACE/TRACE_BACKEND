@@ -1,14 +1,16 @@
-import random
-import re
-from collections import defaultdict
-import numpy as np
-from typing import Dict, List, Tuple, Set
 import csv
 import os
+import random
+import re
 import time
+from collections import defaultdict
+from typing import Dict, List, Tuple, Set
+
 import requests
-import unicodedata #added myself
+import unicodedata  # added myself
 from bs4 import BeautifulSoup
+
+
 #TODO: extend stopwords/ extend filtered words list to exclude words < len() == 4 but not for acronyms. Also attempt to split hyphenated words.
 #Natural Language Processing routine that cleans CSV text 
 def nlp_subroutine(csv_path: str):

@@ -1,6 +1,6 @@
 # request_manager.py
 from fastapi import APIRouter, HTTPException
-from models import RequestModel
+from models.models import RequestModel
 
 router = APIRouter()
 
