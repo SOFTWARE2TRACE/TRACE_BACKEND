@@ -219,7 +219,7 @@ class Crawler:
         return valid_links
 
     def update_crawler_data(self, links, crawler_data):
-        from backend.api_endpoints import set_crawler_data, set_crawler_links
+        from routers.api_endpoints import set_crawler_data, set_crawler_links
         # Update crawler data and links in real-time
         set_crawler_links(links)
         set_crawler_data(crawler_data)
