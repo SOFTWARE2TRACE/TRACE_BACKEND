@@ -75,7 +75,7 @@ def get_fuzzer_data():
     global fuzzer_data, fuzzer_links, fuzzer
     if fuzzer_data is None or fuzzer_links is None or fuzzer is None:
         raise HTTPException(status_code=400, detail="No data available")
-    elif len(fuzzer_links) < fuzzer.config['PageNumberLimit'] and operation_done is False:
+    elif len(fuzzer_links) < fuzzer.config['PageLimit'] and operation_done is False:
         total_data_count = len(fuzzer_links)
         return JSONResponse(
                 content={
