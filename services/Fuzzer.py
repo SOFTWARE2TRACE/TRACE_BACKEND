@@ -128,7 +128,7 @@ class Fuzzer:
 
 
     def update_fuzzer_data(self, links, fuzzer_data):
-        from backend.api_endpoints import set_fuzzer_data, set_fuzzer_links
+        from routers.api_endpoints import set_fuzzer_data, set_fuzzer_links
         # Update fuzzer data and links in real-time
         set_fuzzer_links(links)
         set_fuzzer_data(fuzzer_data)
