@@ -1,6 +1,6 @@
 import threading
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
@@ -11,18 +11,9 @@ from services.Crawler import Crawler
 from services.Fuzzer import Fuzzer
 from services.mdp3 import WebScraper, nlp_subroutine, CredentialGeneratorMDP
 
-app = FastAPI()
-
 stop_event = threading.Event()
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
+router = APIRouter()
 
 fuzzer_data = Optional [list[str,str]]
 fuzzer_links = [list[str]]
@@ -50,7 +41,7 @@ class FuzzerConfig(BaseModel):
     PageLimit: int
     WordList: list
 
-@app.post("/fuzzer")
+@router.post("/fuzzer")
 async def set_up_fuzzer(config: FuzzerConfig, background_tasks: BackgroundTasks):
     global fuzzer_data, fuzzer_links
     try:
@@ -79,7 +70,7 @@ async def set_up_fuzzer(config: FuzzerConfig, background_tasks: BackgroundTasks)
         raise HTTPException(status_code=400, detail=str(e))
     
 
-@app.get("/fuzzer/data")
+@router.get("/fuzzer/data")
 def get_fuzzer_data():
     global fuzzer_data, fuzzer_links, fuzzer
     if fuzzer_data is None or fuzzer_links is None or fuzzer is None:
@@ -96,7 +87,7 @@ def get_fuzzer_data():
         )
     return fuzzer_data
 
-@app.post("/crawler")
+@router.post("/crawler")
 async def set_up_crawler(config: CrawlerConfig, background_tasks: BackgroundTasks):
     global crawler_data, crawler_links, crawler, operation_done
     crawler_data = None
@@ -117,7 +108,7 @@ async def set_up_crawler(config: CrawlerConfig, background_tasks: BackgroundTask
     background_tasks.add_task(run_crawler)
     return {"message": "Crawl started in the background"}
 
-@app.get("/crawler/data")
+@router.get("/crawler/data")
 def get_crawler_data():
     global crawler_data, crawler_links, crawler
     if crawler_data is None or crawler_links is None or crawler is None:
@@ -135,7 +126,7 @@ def get_crawler_data():
         )
     return crawler_data
 
-@app.get('Crawler/data/links')
+@router.get('Crawler/data/links')
 def get_crawler_data_links():
     global crawler_data, crawler_links, crawler
     if crawler_data is None or crawler_links is None or crawler is None:
@@ -154,7 +145,7 @@ def get_crawler_data_links():
     return crawler_links
 
 
-@app.get("/webscraper")
+@router.get("/webscraper")
 def get_webscraper_data():
     if crawler_data is None or crawler_links is None:
         raise HTTPException(status_code=400, detail="No data available")

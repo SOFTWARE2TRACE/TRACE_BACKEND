@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends
 from typing import Dict
-from models import User
+from models.models import User
 import logging
 
 router = APIRouter()
