@@ -9,7 +9,7 @@ from starlette.responses import JSONResponse
 
 from backend.Crawler import Crawler
 from backend.Fuzzer import Fuzzer
-from mdp3 import WebScraper, nlp_subroutine, CredentialGeneratorMDP
+from services.mdp3 import WebScraper, nlp_subroutine, CredentialGeneratorMDP
 
 app = FastAPI()
 
