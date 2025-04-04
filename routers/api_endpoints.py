@@ -43,7 +43,7 @@ class FuzzerConfig(BaseModel):
 
 @router.post("/fuzzer")
 async def set_up_fuzzer(config: FuzzerConfig, background_tasks: BackgroundTasks):
-    global fuzzer_data, fuzzer_links
+    global fuzzer_data, fuzzer_links, operation_done
     fuzzer_links = None
     fuzzer_data = None
     operation_done = False
@@ -53,17 +53,12 @@ async def set_up_fuzzer(config: FuzzerConfig, background_tasks: BackgroundTasks)
             fuzzer_data = None
             fuzzer_links = None
             print("Received config: ", config)
-            if config:
-                fuzzer = Fuzzer(config.model_dump())
-            else:
-                fuzzer = Fuzzer()
+            fuzzer = Fuzzer(config.model_dump())
 
-            fuzzer.start()            
-            fuzzer_data = None # I don't know what is supposed to go here
-            fuzzer_links = None # I don't know what is supposed to go here
-            operation_done = True
+            fuzzer.start()
             fuzzer_data = fuzzer.get_data()
             fuzzer_links = fuzzer.get_links()
+            operation_done = True
         
         background_tasks.add_task(run_fuzzer)
         return {"message": "Fuzz completed successfully"}
@@ -88,6 +83,7 @@ def get_fuzzer_data():
                 status_code=206,
                 headers={"Content-Range": total_data_count * "links"}
         )
+    print("op",operation_done)
     return fuzzer_data
 
 @router.post("/crawler")
