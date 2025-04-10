@@ -2,7 +2,7 @@ import socket
 from typing import Dict, Any
 import time
 from urllib.parse import urljoin, urlparse
-import requests
+# Removed:import requests
 from bs4 import BeautifulSoup
 
 from models.DirectoryTreeCreator import DirectoryTreeCreator
@@ -16,36 +16,41 @@ class Crawler:
             "UserAgent": "",
             "RequestDelay": 1000
         }
-    def __init__(self, config = None):
-        if config is None:
+    def __init__(self, config = None, http_client=None):
+        # Handle empty or None config by resetting to defaults
+        if config is None or len(config) == 0:
             self.reset()
-            return
-        elif len(config) == 0:
-            self.reset()
-            return
-        for key in self.default_config.keys():
-            if key not in config:
-                raise KeyError("Invalid config dictionary")
-        try:
-            self.config = {
-                "TargetURL": config["TargetURL"],
-                "CrawlDepth": int(config["CrawlDepth"]),
-                "PageNumberLimit": int(config["PageNumberLimit"]),
-                "UserAgent": config["UserAgent"],
-                "RequestDelay": float(config["RequestDelay"]),
-            }
-        except ValueError as e:
-            raise ValueError(f"Invalid config values: {e}")
+        else:
+            # Validate that all required config keys are present
+            for key in self.default_config.keys():
+                if key not in config:
+                    raise KeyError("Invalid config dictionary")
+            try:
+                # Set config with type conversion for numeric values
+                self.config = {
+                    "TargetURL": config["TargetURL"],
+                    "CrawlDepth": int(config["CrawlDepth"]),
+                    "PageNumberLimit": int(config["PageNumberLimit"]),
+                    "UserAgent": config["UserAgent"],
+                    "RequestDelay": float(config["RequestDelay"]),
+                }
+            except ValueError as e:
+                raise ValueError(f"Invalid config values: {e}")
 
-        #Store raw responses as {path:response}
+        # Dictionary to store raw HTML responses {path: response}
         self.op_results: Dict[str, Any] = {}
-        #Track visited URLs to prevent duplicate crawling
+        # Set to track visited URLs and avoid duplicates
         self.visited_urls = set()
-        #Track how many pages have been crawled
-        self.page_count = int(0)
-        #Tree creator instance to handle the tree structure
+        # Counter for number of pages crawled
+        self.page_count = 0
+        # Instance of DirectoryTreeCreator to manage the tree structure
         self.tree_creator = DirectoryTreeCreator()
+        # Current crawl depth (not used in this version but kept for consistency)
         self.curr_depth = 0
+        # HTTPClient instance from Subsystem 1 for making requests
+        self.client = http_client
+        if self.client is None:
+            raise ValueError("HTTPClient instance required")
 
     # def startCrawl(self):
     #
@@ -184,22 +189,24 @@ class Crawler:
             return None
         time.sleep(self.config['RequestDelay']/1000)
         try:
-            req = requests.get(curr_dir, headers={'User-Agent': self.config['UserAgent']})
-            if req.status_code == 200:
+            self.client.send_request(curr_dir, None, "GET", {'User-Agent': self.config['UserAgent']})
+            response = self.client.receive_response()
+            if response and response.status_code == 200:
                 print(f"Currently crawling: {curr_dir}")
-                self.op_results[curr_dir] = req.text
+                self.op_results[curr_dir] = response.body
                 self.visited_urls.add(curr_dir)
-                self.page_count+=1
-                if self.tree_creator.tree.root is not None:
-                    self.update_crawler_data(self.visited_urls, self.tree_creator.get_tree_map(self.tree_creator.tree.root))
-                return req.text
+                self.page_count += 1
+                self.update_crawler_data(self.visited_urls, self.tree_creator.get_tree_map(self.tree_creator.tree.root))
+                return response.body
             else:
-                print(f"[ERROR] Failed to access {curr_dir}: {req.status_code}")
+                print(f"[ERROR] Failed to access {curr_dir}: {response.status_code if response else 'No response'}")
         except Exception as e:
             print(f"[ERROR] Connection error: {e}")
         return None
 
     def get_valid_links(self, response: str, curr_dir):
+        if not response:  # Handle None or empty response
+            return []
         soup = BeautifulSoup(response, 'html.parser')
         links = [a.get('href') for a in soup.find_all('a', href=True)]
         links = [link for link in links if not link.startswith("#")]
@@ -258,6 +265,7 @@ class Crawler:
         return list(self.op_results.keys())
     
     def getTree(self):
-        return self.visited_urls
+        #Ensures getTree matches the SRS and provides the full tree structure, not just visited URLs.
+        return self.tree_creator.get_tree_map(self.tree_creator.tree.root)
     def getDefaultConfig(self):
         return self.default_config
