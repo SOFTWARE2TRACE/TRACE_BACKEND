@@ -3,7 +3,9 @@ from typing import Dict, Any
 import json
 import string
 
-from services.utils import send_get_request, send_post_request, send_put_request
+# Removed: from services.utils import send_get_request, send_post_request, send_put_request
+# Reason: Replaced with Subsystem 1's HTTPClient for consistent HTTP handling across subsystems
+#from services.utils import send_get_request, send_post_request, send_put_request
 
 class Fuzzer:
     config = dict()
@@ -17,36 +19,36 @@ class Fuzzer:
             "PageLimit": 1000,
             "WordList": ["username", "password", "search", "admin"]
         }
-    def __init__(self, config=None):
-        if config is None:
+    
+    def __init__(self, config=None, http_client=None):
+        # Added http_client parameter to accept HTTPClient instance from Subsystem 1
+        if config is None or len(config) == 0:
             self.reset()
             return
-        elif len(config) == 0:
-            self.reset()
-            return
-        for key in self.default_config.keys():
-            if key not in config:
-                print(key)
-                raise KeyError("Invalid config dictionary")
-        try:
-            self.config = {
-                "TargetURL": config["TargetURL"],
-                "HTTPMethod": config["HTTPMethod"],
-                "Cookies": config["Cookies"],
-                "HideStatusCode": config["HideStatusCode"],
-                "ShowOnlyStatusCode": config["ShowOnlyStatusCode"],
-                "FilterContentLength": int(config["FilterContentLength"]),
-                "PageLimit": int(config["PageLimit"]),
-                "WordList": config["WordList"]
-            }
-        except ValueError as e:
-            raise ValueError(f"Invalid config values: {e}")
-         #Store raw responses as {path:response}
-        self.op_results: Dict[str, Any] = {}
-        #Track visited URLs to prevent duplicate crawling
-        self.visited_urls = set()
-        #Track how many pages have been crawled
-        self.page_count = int(0)
+        else:
+            for key in self.default_config.keys():
+                if key not in config:
+                    print(key)
+                    raise KeyError("Invalid config dictionary")
+            try:
+                self.config = {
+                    "TargetURL": config["TargetURL"],
+                    "HTTPMethod": config["HTTPMethod"],
+                    "Cookies": config["Cookies"],
+                    "HideStatusCode": config["HideStatusCode"],
+                    "ShowOnlyStatusCode": config["ShowOnlyStatusCode"],
+                    "FilterContentLength": int(config["FilterContentLength"]),
+                    "PageLimit": int(config["PageLimit"]),
+                    "WordList": config["WordList"]
+                }
+            except ValueError as e:
+                raise ValueError(f"Invalid config values: {e}")
+            self.op_results: Dict[str, Any] = {}
+            self.visited_urls = set()
+            self.page_count = 0
+            self.client = http_client # Store HTTPClient instance for making requests
+            if self.client is None:
+                raise ValueError("HTTPClient instance required") # Ensure HTTPClient is provided by Subsystem 1
 
     def start(self):
         if self.config['HTTPMethod'] == "GET":
@@ -66,20 +68,27 @@ class Fuzzer:
 
     def fuzz(self, word, mode, fuzzed_string=None, json_string=None):
         
-        curr_dir = self.config['TargetURL']+"/"+word+"/"+fuzzed_string
+        curr_dir = self.config['TargetURL']+"/"+word+"/"+ (fuzzed_string or "")
+        headers = {"User-Agent": ""}  # Default empty, configurable later if needed
+        # Replaced utils.py send_*_request with HTTPClient to use Subsystem 1's centralized HTTP handling
         # www.google.com/akjlsdhf www.google.com/search/alkdsjfh
         if mode == "GET":
-            response, status_code = send_get_request(curr_dir, 0, self.page_count, self.config['PageLimit'], "", self.config['Cookies'])
-        elif mode =="POST":
-            response, status_code = send_post_request(curr_dir, 0, json_string, self.page_count, self.config['PageLimit'], "", self.config['Cookies'])
+            self.client.send_request_with_cookies(curr_dir, None, "GET", headers, self.config['Cookies'])
+        elif mode == "POST":
+            payload = json.loads(json_string) if json_string else {}
+            self.client.send_request_with_cookies(curr_dir, payload, "POST", headers, self.config['Cookies'])
         elif mode == "PUT":
-            response, status_code = send_put_request(curr_dir, 0, json_string, self.page_count, self.config['PageLimit'], "", self.config['Cookies'])
+            payload = json.loads(json_string) if json_string else {}
+            self.client.send_request_with_cookies(curr_dir, payload, "PUT", headers, self.config['Cookies'])
         else:
             raise TypeError("Invalid mode")
-        self.op_results[curr_dir] = response, status_code
-        self.visited_urls.add(curr_dir)
-        self.update_fuzzer_data(links=self.visited_urls, fuzzer_data=self.op_results)
-        self.page_count+=1
+        # Updated to use HTTPClient's response structure (body, status_code)
+        response = self.client.receive_response()
+        if response:
+            self.op_results[curr_dir] = (response.body, response.status_code)
+            self.visited_urls.add(curr_dir)
+            self.page_count += 1
+            self.update_fuzzer_data(links=self.visited_urls, fuzzer_data=self.op_results)
 
     def start_fuzzer_get(self):
         fuzzed_string = self.generate_fuzzing_params()
@@ -101,7 +110,7 @@ class Fuzzer:
                 json_string = json.dumps({word: fuzzed_string})
                 self.fuzz(word, "PUT", fuzzed_string, json_string)
 
-    import json
+    #already a one at the top : import json
 
     def start_fuzzer_post(self):
         while self.page_count < self.config['PageLimit']:
