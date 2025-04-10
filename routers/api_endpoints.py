@@ -8,6 +8,7 @@ from typing import Dict, Any, Optional
 from starlette.responses import JSONResponse
 
 from services.Crawler import Crawler
+from services.HTTPClient import HTTPClient, RequestManager, ProxyServer
 from services.Fuzzer import Fuzzer
 from services.mdp3 import WebScraper, nlp_subroutine, CredentialGeneratorMDP
 
@@ -53,7 +54,10 @@ async def set_up_fuzzer(config: FuzzerConfig, background_tasks: BackgroundTasks)
             fuzzer_data = None
             fuzzer_links = None
             print("Received config: ", config)
-            fuzzer = Fuzzer(config.model_dump())
+            req_manager = RequestManager()
+            proxy_server = ProxyServer()
+            client = HTTPClient(request_manager=req_manager, proxy_server=proxy_server)
+            fuzzer = Fuzzer(config.model_dump(), client)
 
             fuzzer.start()
             fuzzer_data = fuzzer.get_data()
@@ -98,7 +102,10 @@ async def set_up_crawler(config: CrawlerConfig, background_tasks: BackgroundTask
         global crawler_data, crawler_links, crawler, operation_done
         crawler_data = None
         crawler_links = None
-        crawler = Crawler(config.model_dump())
+        req_manager = RequestManager()
+        proxy_server = ProxyServer()
+        client = HTTPClient(request_manager=req_manager, proxy_server=proxy_server)
+        crawler = Crawler(config.model_dump(), http_client=client)
         crawler.start_crawl()
         crawler_data = crawler.tree_creator.get_tree_map(crawler.tree_creator.tree.root)
         crawler_links = crawler.getCrawlResults()

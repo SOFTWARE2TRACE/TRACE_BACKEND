@@ -196,7 +196,8 @@ class Crawler:
                 self.op_results[curr_dir] = response.body
                 self.visited_urls.add(curr_dir)
                 self.page_count += 1
-                self.update_crawler_data(self.visited_urls, self.tree_creator.get_tree_map(self.tree_creator.tree.root))
+                if self.tree_creator.tree.root is not None:
+                    self.update_crawler_data(self.visited_urls, self.tree_creator.get_tree_map(self.tree_creator.tree.root))
                 return response.body
             else:
                 print(f"[ERROR] Failed to access {curr_dir}: {response.status_code if response else 'No response'}")
